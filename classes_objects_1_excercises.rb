@@ -5,7 +5,7 @@
 # Create instance methods that allow the car to speed up, brake, and shut the car off.
 
 class MyCar
-  attr_accessor :color, :speed
+  attr_accessor :color, :speed 
   attr_reader :year, :model
   
   def initialize(y, c, m)
@@ -13,6 +13,10 @@ class MyCar
     @color = c
     @model = m
     @speed = 0
+  end
+  
+  def self.gas_mileage(gallons, miles)
+    puts "#{miles / gallons} miles per gallon of gas"
   end
   
   def spray_paint(new_color)
@@ -31,17 +35,24 @@ class MyCar
   def shut_off
     self.speed = 0
   end
+  
+  def to_s
+    "This car is a #{color.downcase} #{year} #{model}"
+  end
+  
 end
 
 new_car = MyCar.new('1997', 'Black', 'Camry')
 
-puts new_car.year
-puts new_car.color
-puts new_car.model
-puts new_car.speed
+# puts new_car.year
+# puts new_car.color
+# puts new_car.model
+# puts new_car.speed
 new_car.accelerate
-puts new_car.speed
+# puts new_car.speed
 new_car.shut_off
-puts new_car.speed
+# puts new_car.speed
 new_car.spray_paint("Blue")
-puts new_car.color
+# puts new_car.color
+MyCar.gas_mileage(13, 351)
+puts new_car.to_s
