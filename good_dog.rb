@@ -1,30 +1,137 @@
-class GoodDog
-  attr_accessor :name, :height, :weight
-  
-  def initialize(n, h, w)
-    self.name   = n
-    self.height = h
-    self.weight = w
+class Animal
+  def a_public_method
+    "Will this work? " + self.a_protected_method
   end
   
-  def change_info(n, h, w)
-    self.name   = n
-    self.height = h
-    self.weight = w
-  end
+  protected
   
-  def info
-       "#{self.name} weighs #{self.weight} and is #{self.height} tall."
+  def a_protected_method
+    "Yes, I'm protected!"
   end
-  
-  def what_is_self
-    self
-  end
-  puts self
 end
 
-sparky = GoodDog.new('Sparky', '12 inches', '10 lbs')
-p sparky.what_is_self
+fido = Animal.new
+p fido.a_public_method
+
+
+# class GoodDog
+#   DOG_YEARS = 7
+  
+#   attr_accessor :name, :age
+  
+#   def initialize(n, a)
+#     self.name = n
+#     self.age = a
+#   end
+  
+#   def public_disclosure
+#     "#{self.name} in human years is #{human_years}"
+#   end
+  
+#   private
+  
+#   def human_years
+#     age * DOG_YEARS
+#   end
+  
+
+# end
+
+# sparky = GoodDog.new("Sparky", 4)
+# p sparky.public_disclosure
+
+
+
+# class Animal
+#   attr_accessor :name
+  
+#   def initialize(name)
+#     @name = name
+#   end
+  
+#   def speak
+#     "Hello!"
+#   end
+# end
+
+# class GoodDog < Animal
+#   attr_accessor :name
+  
+#   def initialize(color)
+#     super
+#     @color = color
+#   end
+  
+#   def speak
+#     super + " Woof Woof!"
+#   end
+# end
+
+# class Cat < Animal
+# end
+
+# class BadDog < Animal
+#   def initialize(age, name)
+#     super(name)
+#     @age = age
+#   end
+# end
+
+# bruno = GoodDog.new("brown")
+# p bruno
+
+# p BadDog.new(2, "bear")
+
+
+# sparky = GoodDog.new("Sparky")
+# paws = Cat.new
+# puts sparky.speak
+# puts paws.speak
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# class GoodDog
+#   attr_accessor :name, :height, :weight
+  
+#   def initialize(n, h, w)
+#     self.name   = n
+#     self.height = h
+#     self.weight = w
+#   end
+  
+#   def change_info(n, h, w)
+#     self.name   = n
+#     self.height = h
+#     self.weight = w
+#   end
+  
+#   def info
+#       "#{self.name} weighs #{self.weight} and is #{self.height} tall."
+#   end
+  
+#   def what_is_self
+#     self
+#   end
+#   puts self
+# end
+
+# sparky = GoodDog.new('Sparky', '12 inches', '10 lbs')
+# p sparky.what_is_self
 
 
 
