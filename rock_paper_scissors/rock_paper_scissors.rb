@@ -129,12 +129,13 @@ class Lizard < Move
 end
 
 class Player
-  attr_accessor :move, :name, :wins, :ties
+  attr_accessor :move, :name, :wins, :ties, :grand_wins
 
   def initialize
     set_name
     @wins = 0
     @ties = 0
+    @grand_wins = 0
   end
 
   def create_move(choice)
@@ -153,6 +154,10 @@ class Player
 
   def tied
     self.ties += 1
+  end
+
+  def grand_winner
+    self.grand_wins += 1
   end
 end
 
@@ -181,12 +186,31 @@ class Human < Player
 end
 
 class Computer < Player
+  attr_accessor :ai
+
+  PERSONALITIES = { 'R2D2' => [50, 70, 80, 90, 100],
+                    'Hal' => [2, 4, 40, 50, 100],
+                    'Chappie' => [20, 30, 40, 90, 100],
+                    'Sonny' => [10, 28, 30, 80, 100],
+                    'Number 5' => [20, 70, 80, 90, 100] }
+
+  def initialize
+    super
+    @ai = PERSONALITIES[name]
+  end
+
   def set_name
     self.name = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5'].sample
   end
 
   def choose
-    self.move = create_move(Move::VALUES.sample)
+    d100_roll = (1..100).to_a.sample
+    ai.each_with_index do |range_max, index|
+      if d100_roll <= range_max
+        self.move = create_move(Move::VALUES[index])
+        break
+      end
+    end
   end
 end
 
@@ -219,8 +243,12 @@ class History
       puts "#{index + 1}: #{hname} #{move[0]} vs. #{cname} #{move[1]}"
     end
   end
-  
+
   def show_history
+    hname = human.name
+    cname = computer.name
+    puts "#{hname}: #{human.grand_wins} vs. #{cname}: #{computer.grand_wins}"
+    puts ""
     previous_matches.each_with_index do |round, index|
       puts "***Round #{index + 1}***"
       show_match(round)
@@ -242,13 +270,13 @@ class RPSGame
 
   def display_welcome_message
     clear_screen
-    puts "Welcome to Rock, Paper, Scissors #{human.name}!"
+    puts "Welcome to Rock, Paper, Scissors, lizard,Spock #{human.name}!"
   end
 
   def display_goodbye_message
     clear_screen
     history.show_history
-    puts "Thanks for playing Rock, Paper, Scissors. Goodbye!"
+    puts "Thanks for playing Rock, Paper, Scissors, Lizard, Spock. Goodbye!"
   end
 
   def display_moves
@@ -287,7 +315,6 @@ class RPSGame
       puts "Sorry, must be y or n."
     end
 
-
     return false if answer.downcase == 'n'
     return true if answer.downcase == 'y'
   end
@@ -298,13 +325,17 @@ class RPSGame
 
   def grand_winner_name
     if human.wins >= PLAY_TO
+      human.grand_winner
       human.name
     else
+      computer.grand_winner
       computer.name
     end
   end
 
   def display_grand_winner
+    history.show_match
+    history.update
     display_score
     puts "#{grand_winner_name} is the Grand Winner!"
   end
@@ -329,6 +360,11 @@ class RPSGame
     computer.ties = 0
   end
 
+  def new_round
+    clear_scores
+    clear_screen
+  end
+
   def game_round
     display_score
     human.choose
@@ -346,12 +382,9 @@ class RPSGame
       until grand_winner?
         game_round
       end
-      history.show_match
-      history.update
       display_grand_winner
       break unless play_again?
-      clear_scores
-      clear_screen
+      new_round
     end
     display_goodbye_message
   end
