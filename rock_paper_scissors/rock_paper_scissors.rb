@@ -206,17 +206,25 @@ class History
     @moves << [human_move, computer_move]
   end
 
-  def update_history
+  def update
     self.current_match += 1
     previous_matches << @moves
     self.moves = []
   end
 
-  def show
+  def show_match(round = @moves)
     hname = human.name
     cname = computer.name
-    @moves.each_with_index do |move, index|
+    round.each_with_index do |move, index|
       puts "#{index + 1}: #{hname} #{move[0]} vs. #{cname} #{move[1]}"
+    end
+  end
+  
+  def show_history
+    previous_matches.each_with_index do |round, index|
+      puts "***Round #{index + 1}***"
+      show_match(round)
+      puts ""
     end
   end
 end
@@ -233,13 +241,13 @@ class RPSGame
   end
 
   def display_welcome_message
-    puts "Welcome to Rock, Paper, Scissors!"
+    clear_screen
+    puts "Welcome to Rock, Paper, Scissors #{human.name}!"
   end
 
   def display_goodbye_message
-    display_score
-    display_grand_winner
-    p history.previous_matches
+    clear_screen
+    history.show_history
     puts "Thanks for playing Rock, Paper, Scissors. Goodbye!"
   end
 
@@ -279,7 +287,7 @@ class RPSGame
       puts "Sorry, must be y or n."
     end
 
-    history.update_history
+
     return false if answer.downcase == 'n'
     return true if answer.downcase == 'y'
   end
@@ -297,8 +305,8 @@ class RPSGame
   end
 
   def display_grand_winner
+    display_score
     puts "#{grand_winner_name} is the Grand Winner!"
-    history.show
   end
 
   def display_score
@@ -338,12 +346,14 @@ class RPSGame
       until grand_winner?
         game_round
       end
-
-      display_goodbye_message
+      history.show_match
+      history.update
+      display_grand_winner
       break unless play_again?
       clear_scores
       clear_screen
     end
+    display_goodbye_message
   end
 end
 
