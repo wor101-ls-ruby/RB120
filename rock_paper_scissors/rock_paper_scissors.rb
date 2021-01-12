@@ -270,7 +270,7 @@ class RPSGame
 
   def display_welcome_message
     clear_screen
-    puts "Welcome to Rock, Paper, Scissors, lizard,Spock #{human.name}!"
+    puts "Welcome to Rock, Paper, Scissors, lizard, Spock #{human.name}!"
   end
 
   def display_goodbye_message
