@@ -1,3 +1,4 @@
+require 'pry'
 class Board
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
                   [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
@@ -14,6 +15,16 @@ class Board
 
   def unmarked_keys
     @squares.keys.select { |key| @squares[key].unmarked? }
+  end
+
+  def at_risk_square
+    WINNING_LINES.each do |line|
+      markers = get_line_markers(line)
+      next if markers.count(Square::INITIAL_MARKER) != 1
+      return line.last if markers[0] == markers[1]
+      return line.first if markers[1] == markers[2]
+    end
+    nil
   end
 
   def full?
@@ -42,22 +53,26 @@ class Board
   # rubocop:disable Metrics/AbcSize
   # rubocop:disable Metrics/MethodLength
   def draw
-    puts "     |     |"
-    puts "  #{@squares[1]}  |  #{@squares[2]}  |  #{@squares[3]}  "
-    puts "     |     |"
-    puts "-----|-----|-----"
-    puts "     |     |"
-    puts "  #{@squares[4]}  |  #{@squares[5]}  |  #{@squares[6]}  "
-    puts "     |     |"
-    puts "-----|-----|-----"
-    puts "     |     |"
-    puts "  #{@squares[7]}  |  #{@squares[8]}  |  #{@squares[9]}  "
-    puts "     |     |"
+    puts "     |     |     ".center(28)
+    puts "  #{@squares[1]}  |  #{@squares[2]}  |  #{@squares[3]}  ".center(28)
+    puts "     |     |     ".center(28)
+    puts "-----|-----|-----".center(28)
+    puts "     |     |     ".center(28)
+    puts "  #{@squares[4]}  |  #{@squares[5]}  |  #{@squares[6]}  ".center(28)
+    puts "     |     |     ".center(28)
+    puts "-----|-----|-----".center(28)
+    puts "     |     |     ".center(28)
+    puts "  #{@squares[7]}  |  #{@squares[8]}  |  #{@squares[9]}  ".center(28)
+    puts "     |     |     ".center(28)
   end
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
 
   private
+
+  def get_line_markers(line)
+    @squares.values_at(*line).map(&:marker)
+  end
 
   def three_identical_markers?(squares)
     markers = squares.select(&:marked?).collect(&:marker)
@@ -100,6 +115,7 @@ class TTTGame
   HUMAN_MARKER = "X"
   COMPUTER_MARKER = "O"
   FIRST_TO_MOVE = HUMAN_MARKER
+  MAX_WINS = 5
 
   attr_reader :board, :human, :computer
 
@@ -108,12 +124,20 @@ class TTTGame
     @human = Player.new(HUMAN_MARKER)
     @computer = Player.new(COMPUTER_MARKER)
     @current_player = @human.marker
+    @human_wins = 0
+    @computer_wins = 0
   end
 
   def play
-    clear
-    display_welcome_message
-    main_game
+    loop do
+      clear
+      display_welcome_message
+      main_game
+      display_grand_winner
+      break unless play_again?
+      reset
+      reset_match
+    end
     display_goodbye_message
   end
 
@@ -123,10 +147,43 @@ class TTTGame
     loop do
       display_board
       player_move
+      update_score
       display_result
-      break unless play_again?
+      break if grand_winner?
+      player_ready?
       reset
       display_play_again_message
+    end
+  end
+
+  def reset_match
+    @human_wins = 0
+    @computer_wins = 0
+  end
+
+  def display_grand_winner
+    if @human_wins >= MAX_WINS
+      puts "You are the Grand Winner!"
+    else
+      puts "The Computer is the Grand Winner!"
+    end
+  end
+
+  def player_ready?
+    puts "Hit enter to proceed to the next game!"
+    gets.chomp
+  end
+
+  def grand_winner?
+    @human_wins >= MAX_WINS || @computer_wins >= MAX_WINS
+  end
+
+  def update_score
+    case board.winning_marker
+    when HUMAN_MARKER
+      @human_wins += 1
+    when COMPUTER_MARKER
+      @computer_wins += 1
     end
   end
 
@@ -148,8 +205,15 @@ class TTTGame
     puts "Thanks for playing Tic Tac Toe! Goodbye!"
   end
 
+  def display_score
+    "#{human.marker}: #{@human_wins} vs." \
+      " #{computer.marker}: #{@computer_wins}".center(28, '-')
+  end
+
   def display_board
     puts "You're a #{human.marker}. Computer is a #{computer.marker}."
+    puts ""
+    puts display_score
     puts ""
     board.draw
     puts ""
@@ -160,8 +224,17 @@ class TTTGame
     display_board
   end
 
+  def joiner(unmarked_keys, punctuation = ', ', conjunction = ' or ')
+    if unmarked_keys.size <= 2
+      unmarked_keys.join(conjunction)
+    else
+      unmarked_keys[0...-2].join(punctuation) + punctuation +
+        unmarked_keys[-2..-1].join(conjunction)
+    end
+  end
+
   def human_moves
-    puts "Choose a square (#{board.unmarked_keys.join(', ')}): "
+    puts "Choose a square (#{joiner(board.unmarked_keys)}): "
     square = nil
     loop do
       square = gets.chomp.to_i
@@ -173,7 +246,11 @@ class TTTGame
   end
 
   def computer_moves
-    board[board.unmarked_keys.sample] = computer.marker
+    if board.at_risk_square
+      board[board.at_risk_square] = computer.marker
+    else
+      board[board.unmarked_keys.sample] = computer.marker
+    end
   end
 
   def display_result
