@@ -123,26 +123,25 @@ class Square
 end
 
 class Player
-  attr_reader :marker
+  attr_accessor :marker, :name
 
   def initialize(marker)
     @marker = marker
+    @name = name
   end
 end
 
 class TTTGame
-  HUMAN_MARKER = "X"
-  COMPUTER_MARKER = "O"
-  FIRST_TO_MOVE = HUMAN_MARKER
   MAX_WINS = 5
 
-  attr_reader :board, :human, :computer
+  attr_reader :board, :human, :computer, :human_marker, :computer_marker
 
   def initialize
     @board = Board.new
-    @human = Player.new(HUMAN_MARKER)
-    @computer = Player.new(COMPUTER_MARKER)
-    @current_player = @human.marker
+    @human = Player.new('X')
+    @computer = Player.new('O')
+    @first_to_move = human.marker
+    @current_player = human.marker
     @human_wins = 0
     @computer_wins = 0
   end
@@ -150,7 +149,7 @@ class TTTGame
   def play
     loop do
       clear
-      display_welcome_message
+      setup_match
       main_game
       display_grand_winner
       break unless play_again?
@@ -175,6 +174,50 @@ class TTTGame
     end
   end
 
+  def setup_match
+    display_welcome_message
+    set_name
+    set_markers
+  end
+
+  def set_name
+    name = nil
+    loop do
+      puts "Please enter your name."
+      name = gets.chomp
+      break if name.size != ''
+      clear
+      puts "Sorry that is not a valid choice."
+    end
+    human.name = name
+  end
+
+  def set_markers
+    human.marker = choose_player_marker
+    computer.marker = choose_computer_marker
+    @first_to_move = human.marker
+    @current_player = human.marker
+    clear
+  end
+
+  def choose_player_marker
+    marker = nil
+    loop do
+      puts "Enter a symbol for your marker: "
+      marker = gets.chomp
+      break if marker.size == 1 && marker != Square::INITIAL_MARKER
+      clear
+      puts "Sorry that is not a valid option."
+    end
+    marker
+  end
+
+  def choose_computer_marker
+    return 'O' if human.marker != 'O'
+    letters = ('A'...'O').to_a + ('P'..'Z').to_a
+    letters.sample
+  end
+
   def reset_match
     @human_wins = 0
     @computer_wins = 0
@@ -182,7 +225,7 @@ class TTTGame
 
   def display_grand_winner
     if @human_wins >= MAX_WINS
-      puts "You are the Grand Winner!"
+      puts "#{human.name} is the Grand Winner!"
     else
       puts "The Computer is the Grand Winner!"
     end
@@ -199,9 +242,9 @@ class TTTGame
 
   def update_score
     case board.winning_marker
-    when HUMAN_MARKER
+    when human.marker
       @human_wins += 1
-    when COMPUTER_MARKER
+    when computer.marker
       @computer_wins += 1
     end
   end
@@ -221,7 +264,7 @@ class TTTGame
   end
 
   def display_goodbye_message
-    puts "Thanks for playing Tic Tac Toe! Goodbye!"
+    puts "Thanks for playing Tic Tac Toe #{human.name}! Goodbye!"
   end
 
   def display_score
@@ -230,7 +273,7 @@ class TTTGame
   end
 
   def display_board
-    puts "You're a #{human.marker}. Computer is a #{computer.marker}."
+    puts "#{human.name} is a #{human.marker}. Computer is a #{computer.marker}."
     puts ""
     puts display_score
     puts ""
@@ -311,9 +354,9 @@ class TTTGame
   def display_result
     clear_screen_and_display_board
     case board.winning_marker
-    when HUMAN_MARKER
-      puts "You won!"
-    when COMPUTER_MARKER
+    when human.marker
+      puts "#{human.name} won!"
+    when computer.marker
       puts "Computer won!"
     else
       puts "It's a tie!"
@@ -338,27 +381,27 @@ class TTTGame
 
   def reset
     board.reset
-    @current_player = FIRST_TO_MOVE
+    @current_player = @first_to_move
     clear
   end
 
   def display_play_again_message
-    puts "Let's play again!"
+    puts "Let's play again #{human.name}!"
     puts ""
   end
 
   def human_turn?
-    @current_player == HUMAN_MARKER
+    @current_player == human.marker
   end
 
   def current_player_moves
     if human_turn?
       human_moves
-      @current_player = COMPUTER_MARKER
+      @current_player = computer.marker
     else
       board.update_winning_moves
       computer_moves
-      @current_player = HUMAN_MARKER
+      @current_player = human.marker
     end
   end
 end
