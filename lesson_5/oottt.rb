@@ -1,12 +1,18 @@
-require 'pry'
 class Board
+  attr_reader :winning_moves
+
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
                   [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
                   [[1, 5, 9], [3, 5, 7]]              # diagnols
 
   def initialize
     @squares = {}
+    @winning_moves = []
     reset
+  end
+
+  def [](key)
+    @squares[key]
   end
 
   def []=(key, marker)
@@ -17,14 +23,22 @@ class Board
     @squares.keys.select { |key| @squares[key].unmarked? }
   end
 
-  def at_risk_square
+  def get_winning_square_marker(line)
+    line_markers = get_line_markers(line)
+    empty_square = line[line_markers.index(Square::INITIAL_MARKER)]
+    marker = line_markers.select { |m| m != Square::INITIAL_MARKER }.first
+    [empty_square, marker]
+  end
+
+  def update_winning_moves
+    wins = []
     WINNING_LINES.each do |line|
-      markers = get_line_markers(line)
-      next if markers.count(Square::INITIAL_MARKER) != 1
-      return line.last if markers[0] == markers[1]
-      return line.first if markers[1] == markers[2]
+      squares = @squares.values_at(*line)
+      if two_identical_markers?(squares)
+        wins << get_winning_square_marker(line)
+      end
     end
-    nil
+    @winning_moves = wins
   end
 
   def full?
@@ -35,7 +49,6 @@ class Board
     !!winning_marker
   end
 
-  # returns the winning marker or nil
   def winning_marker
     WINNING_LINES.each do |line|
       squares = @squares.values_at(*line)
@@ -72,6 +85,12 @@ class Board
 
   def get_line_markers(line)
     @squares.values_at(*line).map(&:marker)
+  end
+
+  def two_identical_markers?(squares)
+    markers = squares.select(&:marked?).collect(&:marker)
+    return false if markers.size != 2
+    markers.min == markers.max
   end
 
   def three_identical_markers?(squares)
@@ -245,11 +264,47 @@ class TTTGame
     board[square] = human.marker
   end
 
+  def find_winning_move(marker)
+    moves = board.winning_moves
+    moves.each do |move|
+      return move[0] if move[1] == marker
+    end
+    nil
+  end
+
+  def find_defensive_move(marker)
+    moves = board.winning_moves
+    moves.each do |move|
+      return move[0] if move[1] == marker
+    end
+    nil
+  end
+
+  def play_middle_square
+    board[5] = computer.marker
+  end
+
+  def play_winning_move
+    board[find_winning_move(computer.marker)] = computer.marker
+  end
+
+  def play_defensive_move
+    board[find_defensive_move(human.marker)] = computer.marker
+  end
+
+  def select_random_square
+    board[board.unmarked_keys.sample] = computer.marker
+  end
+
   def computer_moves
-    if board.at_risk_square
-      board[board.at_risk_square] = computer.marker
+    if !find_winning_move(computer.marker).nil?
+      play_winning_move
+    elsif !find_defensive_move(human.marker).nil?
+      play_defensive_move
+    elsif board[5].marker == Square::INITIAL_MARKER
+      play_middle_square
     else
-      board[board.unmarked_keys.sample] = computer.marker
+      select_random_square
     end
   end
 
@@ -301,6 +356,7 @@ class TTTGame
       human_moves
       @current_player = COMPUTER_MARKER
     else
+      board.update_winning_moves
       computer_moves
       @current_player = HUMAN_MARKER
     end
