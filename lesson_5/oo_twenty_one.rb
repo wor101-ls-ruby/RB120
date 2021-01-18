@@ -1,5 +1,3 @@
-require 'pry'
-
 class Participant
   attr_accessor :hand, :total
   attr_reader :name
@@ -328,7 +326,6 @@ class Game
   def stay?
     answer = ''
     loop do
-      # binding.pry
       puts "Do you want to hit or stay? (h, s)"
       answer = gets.chomp.downcase[0]
       break if %w(hit stay h s).include?(answer)
