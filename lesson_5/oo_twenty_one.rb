@@ -8,15 +8,15 @@ class Participant
     @total = 0
   end
 
-  def show_hand
+  def show_full_hand
     cards_in_hand = []
     hand.each { |card| cards_in_hand << card.to_s }
     cards_in_hand.join(', ')
   end
 
-  def hit(deck, participant)
-    puts "#{participant.name} chooses to hit!"
-    deck.deal(1, participant)
+  def hit(deck)
+    puts "#{name} chooses to hit!"
+    deck.deal(1, self)
   end
 
   def busted?
@@ -62,6 +62,11 @@ class Participant
     hand_total
   end
 
+  def reset
+    self.total = 0
+    self.hand = []
+  end
+
   def to_s
     @name
   end
@@ -69,6 +74,18 @@ end
 
 class Player < Participant
   attr_writer :name
+
+  def set_name
+    new_name = ''
+    loop do
+      puts "Please enter your name:"
+      new_name = gets.chomp
+      break if name.strip.size > 1
+      clear
+      puts "Sorry your name must be at least 2 characters long."
+    end
+    @name = new_name
+  end
 end
 
 class Dealer < Participant
@@ -139,6 +156,7 @@ class Game
   TITLE = "Twenty One!"
   GREETING = "Welcome to Twenty One!"
   THANKS = "Thanks for playing Twenty One!"
+  DEALER_MIN = 17
 
   attr_reader :player, :dealer, :deck, :winner
 
@@ -151,15 +169,16 @@ class Game
 
   def start
     display_title(GREETING)
-    set_player_name
+    @player.set_name
     loop do
       setup
       player_turn
       dealer_turn
       show_result
-      break if !play_again?
+      break unless play_again?
       reset
     end
+    display_title(THANKS)
   end
 
   def clear
@@ -172,22 +191,11 @@ class Game
   end
 
   def display_title(title)
+    clear
     puts "*" * 40
     puts title.center(40)
     puts "*" * 40
     puts " "
-  end
-
-  def set_player_name
-    name = ''
-    loop do
-      puts "Please enter your name:"
-      name = gets.chomp
-      break if name.size > 1
-      clear
-      puts "Sorry your name must be at least 2 characters long."
-    end
-    player.name = name
   end
 
   def setup
@@ -208,17 +216,16 @@ class Game
   end
 
   def show_initial_cards
-    puts "#{dealer} has: #{dealer.show_initial_hand}" \
-         " for a total of #{dealer.initial_total}"
-    puts "#{player} has: #{player.show_hand}" \
+    puts "#{dealer} has: #{dealer.show_initial_hand}"
+    puts "#{player} has: #{player.show_full_hand}" \
          " for a total of #{player.total}"
     puts ""
   end
 
   def show_all_cards
-    puts "#{dealer} has: #{dealer.show_hand}" \
+    puts "#{dealer} has: #{dealer.show_full_hand}" \
          " for a total of #{dealer.total}"
-    puts "#{player} has: #{player.show_hand}" \
+    puts "#{player} has: #{player.show_full_hand}" \
          " for a total of #{player.total}"
     puts ""
   end
@@ -226,7 +233,7 @@ class Game
   def player_turn
     loop do
       break if stay?
-      player.hit(deck, player)
+      player.hit(deck)
       update_totals
       clear
       show_initial_cards
@@ -241,14 +248,14 @@ class Game
     show_all_cards
     pause
     loop do
-      break if dealer.total >= 17 && dealer.total >= player.total
+      break if dealer.total >= DEALER_MIN && dealer.total >= player.total
       update_dealer_hand
     end
   end
 
   def show_result
     clear
-    display_title(THANKS)
+    display_title(TITLE)
     show_all_cards
     determine_winner
     declare_winner
@@ -293,8 +300,8 @@ class Game
     answer = ''
     loop do
       puts "Would you like to play again? (y, n)"
-      answer = gets.chomp.downcase[0]
-      break if %w(y n).include?(answer)
+      answer = gets.chomp.downcase
+      break if %w(yes no y n).include?(answer)
     end
     answer == 'y'
   end
@@ -302,10 +309,8 @@ class Game
   def reset
     @deck = Deck.new
     @winner = nil
-    player.total = 0
-    dealer.total = 0
-    player.hand = []
-    dealer.hand = []
+    player.reset
+    dealer.reset
   end
 
   def dealer_reveal
@@ -316,7 +321,7 @@ class Game
 
   def update_dealer_hand
     clear
-    dealer.hit(deck, dealer)
+    dealer.hit(deck)
     puts "#{dealer} draws a #{dealer.hand.last}"
     update_totals
     show_all_cards
@@ -327,7 +332,7 @@ class Game
     answer = ''
     loop do
       puts "Do you want to hit or stay? (h, s)"
-      answer = gets.chomp.downcase[0]
+      answer = gets.chomp.downcase
       break if %w(hit stay h s).include?(answer)
       clear
       show_initial_cards
